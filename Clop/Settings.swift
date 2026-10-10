@@ -37,7 +37,7 @@ let IMAGE_PASTEBOARD_TYPES = IMAGE_FORMATS.compactMap { NSPasteboard.PasteboardT
 let AUDIO_PASTEBOARD_TYPES = AUDIO_FORMATS.compactMap { NSPasteboard.PasteboardType(rawValue: $0.identifier) }
 let IMAGE_VIDEO_PASTEBOARD_TYPES: Set<NSPasteboard.PasteboardType> = (IMAGE_PASTEBOARD_TYPES + VIDEO_PASTEBOARD_TYPES + AUDIO_PASTEBOARD_TYPES + [.fileContents]).set
 
-let DEFAULT_HOVER_KEYS: [SauceKey] = [.minus, .delete, .z, .c, .a, .s, .x, .r, .f, .o, .comma, .u, .d, .w, .k, .e]
+let DEFAULT_HOVER_KEYS: [SauceKey] = [.minus, .delete, .z, .c, .a, .s, .x, .r, .f, .o, .comma, .u, .d, .k, .e]
 let DEFAULT_GLOBAL_KEYS: [SauceKey] = [.minus, .equal, .delete, .space, .z, .p, .c, .a, .x, .r, .k, .escape]
 
 enum CleanupInterval: TimeInterval, Codable, Defaults.Serializable {
@@ -81,9 +81,6 @@ extension Defaults.Keys {
     /// true = the geometric all-black menubar icon variant. Takes precedence over
     /// `useClassicMenubarIcon` when deriving the New / Classic / Geometric / Hidden picker.
     static let useGeometricMenubarIcon = Key<Bool>("useGeometricMenubarIcon", default: false)
-    // Seconds after which a "Send securely" link auto-stops (0 = never). Starting value for the
-    // expiration picker and the fallback for the copyLinkForSending step. Default 1 hour.
-    static let defaultLinkExpiration = Key<TimeInterval>("defaultLinkExpiration", default: 3600)
     static let enableFloatingResults = Key<Bool>("enableFloatingResults", default: true)
     static let alwaysShowCompactResults = Key<Bool>("alwaysShowCompactResults", default: false)
     static let hideFloatingResultTooltips = Key<Bool>("hideFloatingResultTooltips", default: false)
@@ -357,7 +354,6 @@ let SETTINGS_TO_SYNC: [Defaults._AnyKey] = [
     Defaults.Keys.showMenubarIcon,
     .useClassicMenubarIcon,
     .useGeometricMenubarIcon,
-    .defaultLinkExpiration,
     .adaptiveImageSize,
     .imageCompression,
     .audioCompression,

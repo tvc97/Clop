@@ -2180,14 +2180,13 @@ struct MadeBy: View {
     }
 }
 
-struct LicenseUpdatesSettingsView: View {
+struct UpdatesSettingsView: View {
     @ObservedObject var um: UpdateManager = UM
-    @ObservedObject var pm: ProManager = PM
 
     var body: some View {
-        if let pro = pm.pro, let updater = um.updater {
+        if let updater = um.updater {
             Form {
-                LicenseAndUpdatesView(pro: pro, updater: updater, appName: "Clop", changelogURL: URL(string: "https://files.lowtechguys.com/clop/changelog.html"))
+                UpdatesView(updater: updater, changelogURL: URL(string: "https://files.lowtechguys.com/clop/changelog.html"))
             }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
@@ -2200,12 +2199,10 @@ struct LicenseUpdatesSettingsView: View {
 
 struct AboutSettingsView: View {
     @ObservedObject var um: UpdateManager = UM
-    @ObservedObject var pm: ProManager = PM
 
     var body: some View {
         AboutView(
             appName: "Clop",
-            pro: pm.pro,
             updater: um.updater,
             websiteURL: URL(string: "https://lowtechguys.com/clop"),
             contactURL: URL(string: "https://lowtechguys.com/contact?app=Clop"),
@@ -2863,7 +2860,6 @@ struct GeneralSettingsView: View {
     @Default(.showMenubarIcon) var showMenubarIcon
     @Default(.useClassicMenubarIcon) var useClassicMenubarIcon
     @Default(.useGeometricMenubarIcon) var useGeometricMenubarIcon
-    @Default(.defaultLinkExpiration) var defaultLinkExpiration
     @Default(.stripMetadata) var stripMetadata
     @Default(.preserveColorMetadata) var preserveColorMetadata
     @Default(.preserveDates) var preserveDates
@@ -2922,20 +2918,6 @@ struct GeneralSettingsView: View {
                 .accessibilityLabel("Launch at login")
             Toggle("Sync settings with other Macs via iCloud", isOn: $syncSettingsCloud)
                 .searchAnchor("general.main.syncSettingsCloud", namesControl: true)
-            HStack {
-                Text("Secure send links expire after")
-                Spacer()
-                Picker("Secure send links expire after", selection: $defaultLinkExpiration) {
-                    ForEach(LINK_EXPIRATION_PRESETS, id: \.self) { preset in
-                        Text(expirationDurationLabel(preset)).tag(preset)
-                    }
-                    Divider()
-                    Text("Never").tag(LINK_EXPIRATION_NEVER)
-                }
-                .labelsHidden()
-                .frame(width: 150)
-                .searchAnchor("general.main.defaultLinkExpiration")
-            }
 
             Section(header: SectionHeader(title: "Edit with external app", subtitle: "Hand an optimised file to an editor of your choice with ⌘E or the right-click menu")) {
                 EditorAppRow(label: "Images", systemImage: "photo", key: .editorAppImage)
@@ -3129,7 +3111,7 @@ struct SettingsSidebarRow: View {
 
 struct SettingsView: View {
     enum Tabs: Int, Hashable, CaseIterable, Identifiable {
-        case general, clipboard, files, video, audio, images, pdf, dropzone, presetZones, floating, keys, pipelines, automation, mcp, licenseUpdates, about
+        case general, clipboard, files, video, audio, images, pdf, dropzone, presetZones, floating, keys, pipelines, automation, mcp, updates, about
 
         var id: Int {
             rawValue
@@ -3159,7 +3141,7 @@ struct SettingsView: View {
             case .pipelines: "Pipelines"
             case .automation: "Automation"
             case .mcp: "MCP"
-            case .licenseUpdates: "License & updates"
+            case .updates: "Updates"
             case .about: "About"
             }
         }
@@ -3180,7 +3162,7 @@ struct SettingsView: View {
             case .pipelines: "arrow.triangle.branch"
             case .automation: "hammer"
             case .mcp: "sparkles"
-            case .licenseUpdates: "key"
+            case .updates: "arrow.triangle.2.circlepath"
             case .about: "info.circle"
             }
         }
@@ -3201,7 +3183,7 @@ struct SettingsView: View {
             case .pipelines: .periwinkle
             case .automation: .sage
             case .mcp: .mutedTeal
-            case .licenseUpdates: .ochre
+            case .updates: .ochre
             case .about: .dustyRose
             }
         }
@@ -3211,7 +3193,7 @@ struct SettingsView: View {
     static let fileTypeTabs: [Tabs] = [.video, .audio, .images, .pdf]
     static let dropTabs: [Tabs] = [.dropzone, .presetZones, .floating]
     static let automationTabs: [Tabs] = [.keys, .pipelines, .automation, .mcp]
-    static let supportTabs: [Tabs] = [.licenseUpdates, .about]
+    static let supportTabs: [Tabs] = [.updates, .about]
 
     @ObservedObject var svm = settingsViewManager
 
@@ -3446,7 +3428,7 @@ struct SettingsView: View {
         case .pipelines: PipelinesSettingsView()
         case .automation: AutomationSettingsView()
         case .mcp: MCPSettingsView()
-        case .licenseUpdates: LicenseUpdatesSettingsView()
+        case .updates: UpdatesSettingsView()
         case .about:
             AboutSettingsView()
                 .overlay(alignment: .bottomTrailing) {

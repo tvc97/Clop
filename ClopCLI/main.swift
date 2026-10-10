@@ -2085,7 +2085,7 @@ struct Clop: ParsableCommand {
 
                 Steps: optimise, downscale, lowerBitrate, convert, crop, extractPagesAsImages,
                 copy, move, rename, delete, if, ifNot, removeAudio, changeSpeed, runScript,
-                runShortcut, copyToClipboard, copyLinkForSending, shelveWith, uploadWith, openWith
+                runShortcut, copyToClipboard, shelveWith, uploadWith, openWith
                 """
             )
 
@@ -2992,7 +2992,7 @@ let KNOWN_PIPELINE_STEPS = [
     "optimise", "downscale", "lowerBitrate", "convert", "crop", "extractPagesAsImages",
     "targetSize", "stripExif", "watermark", "capFps", "normalize",
     "copy", "move", "rename", "delete", "if", "ifNot", "removeAudio", "changeSpeed",
-    "runScript", "runShortcut", "copyToClipboard", "copyLinkForSending", "fork",
+    "runScript", "runShortcut", "copyToClipboard", "fork",
     "shelveWith", "uploadWith", "openWith",
 ]
 
@@ -3067,7 +3067,7 @@ func compactPipelinePromptContext(task: String?) -> String {
     - copy(to) / move(to) / rename(to) / delete(path)  (delete(path: "sourceFile") removes the input file).
     - runScript(path | code): inline `code` is one line, no `->`; file is $1 / $CLOP_INPUT_FILE; bundled ffmpeg, gs, gifski
       etc. are in $CLOP_BIN; a path it prints replaces the file. runShortcut(name) [image,video,pdf].
-    - copyToClipboard(format path|imageData|markdown, relativeTo). copyLinkForSending(expiration 1m|15m|1h|6h|1d|3d|never).
+    - copyToClipboard(format path|imageData|markdown, relativeTo).
       fork(location) surfaces a second card. shelveWith(app yoink|dockside|dropover|atoll). uploadWith(app dropshare). openWith(app).
 
     ## Filters (if / ifNot gate the rest of the pipeline; no else, no branch)
@@ -3176,7 +3176,7 @@ func pipelinePromptContext(task: String?, compact: Bool = false) -> String {
 
     - Steps are separated by `->`, evaluated left to right: `crop(width: 1600) -> convert(to: webp)`.
     - Each step is `name(key: value, key: value)`. No-parameter steps can be bare: `removeAudio`,
-      `stripExif`, `normalize`, `copyToClipboard`, `copyLinkForSending`.
+      `stripExif`, `normalize`, `copyToClipboard`.
     - Quote string, path and regex values: `move(to: "~/Pictures/%y/")`, `if(regex: "^IMG_")`.
       Bare values are fine for enums/numbers: `convert(to: webp)`, `downscale(factor: 0.5)`.
     - File types: `image`, `video`, `pdf`, `audio`. Each step lists the types it applies to;
@@ -3300,9 +3300,6 @@ func pipelinePromptContext(task: String?, compact: Bool = false) -> String {
     - `runShortcut(name)`: run a macOS Shortcut by its name. [image, video, pdf]
     - `copyToClipboard(format, relativeTo)`: `format`: path (default), imageData (images), markdown.
       `relativeTo`: a base path that makes the copied path/link relative (e.g. `~/Projects/blog`).
-    - `copyLinkForSending(expiration)`: send the file securely and copy the share link. `expiration`
-      auto-stops the link (and closes the room) after `1m`/`15m`/`1h`/`6h`/`1d`/`3d` or `never`; omit it to
-      use the default from Preferences. Transfer is peer-to-peer, so the Mac must stay awake until then.
     - `fork(location)`: surface the result-so-far as a SECOND card, then keep processing the main line
       into the first card. The forked card never changes the file the pipeline carries forward, so the
       result path is preserved for later steps (e.g. `optimise -> fork -> convert(to: webp)` yields both

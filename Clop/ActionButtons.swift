@@ -15,7 +15,6 @@ enum FloatingAction: RawRepresentable, CaseIterable, Codable, Hashable, Defaults
     case quickLook
     case saveAs
     case addToShelf
-    case sendSecurely
     case targetSize
     /// Runs a saved pipeline on the result's file, one pipeline per file type so a single button can
     /// do the right thing for images, videos, audio and PDFs. Stored as `pipeline:image=<id>;video=<id>`
@@ -44,13 +43,13 @@ enum FloatingAction: RawRepresentable, CaseIterable, Codable, Hashable, Defaults
     static let pipelinesMenuIcon = "flowchart"
     static let maxFloatingButtons = 5
     static let maxCompactButtons = 9
-    static let defaultFloating: [FloatingAction] = [.downscale, .restoreOptimise, .compression, .aggressiveOptimisation, .share, .sendSecurely]
+    static let defaultFloating: [FloatingAction] = [.downscale, .restoreOptimise, .compression, .aggressiveOptimisation, .share]
     static let defaultCompact: [FloatingAction] = [.downscale, .compression, .crop, .quickLook, .restoreOptimise, .showInFinder, .saveAs, .copyToClipboard, .share]
 
     /// Built-in actions only; pipeline actions come from the saved pipelines library.
     static let allCases: [FloatingAction] = [
         .downscale, .compression, .crop, .share, .restoreOptimise, .aggressiveOptimisation, .copyToClipboard,
-        .showInFinder, .quickLook, .saveAs, .addToShelf, .sendSecurely, .targetSize,
+        .showInFinder, .quickLook, .saveAs, .addToShelf, .targetSize,
     ]
 
     var rawValue: String {
@@ -66,7 +65,6 @@ enum FloatingAction: RawRepresentable, CaseIterable, Codable, Hashable, Defaults
         case .quickLook: "quickLook"
         case .saveAs: "saveAs"
         case .addToShelf: "addToShelf"
-        case .sendSecurely: "sendSecurely"
         case .targetSize: "targetSize"
         case let .pipeline(set): Self.pipelinePrefix + set.raw
         }
@@ -114,7 +112,6 @@ enum FloatingAction: RawRepresentable, CaseIterable, Codable, Hashable, Defaults
         case .quickLook: "QuickLook"
         case .saveAs: "Save as..."
         case .addToShelf: "Add to shelf"
-        case .sendSecurely: "Send securely"
         case .targetSize: "Fit under size"
         }
     }
@@ -132,7 +129,6 @@ enum FloatingAction: RawRepresentable, CaseIterable, Codable, Hashable, Defaults
         case .quickLook: "eye"
         case .saveAs: "square.and.arrow.down"
         case .addToShelf: "tray.and.arrow.down"
-        case .sendSecurely: "paperplane.fill"
         case .targetSize: "target"
         case .pipeline: savedPipeline?.icon ?? "wand.and.sparkles"
         }
@@ -2638,207 +2634,6 @@ struct VideoEncoderButton: View {
     }
 }
 
-struct WarpDropActiveButton: View {
-    let session: WarpDropSession
-
-    @ObservedObject var optimiser: Optimiser
-    @ObservedObject var wdm = WDM
-    @Environment(\.preview) var preview
-
-    /// The current session from the manager (the passed-in copy goes stale after rescheduling).
-    var liveSession: WarpDropSession {
-        wdm.sessions.first { $0.id == session.id } ?? session
-    }
-
-    var body: some View {
-        Menu {
-            if let label = liveSession.expiresInLabel {
-                Text(label)
-            }
-            Menu("Change expiration") {
-                ForEach(LINK_EXPIRATION_PRESETS, id: \.self) { preset in
-                    Button(expirationDurationLabel(preset)) {
-                        if !preview {
-                            WDM.rescheduleExpiry(liveSession, to: preset)
-                        }
-                    }
-                }
-                Divider()
-                Button("Never expire") {
-                    if !preview {
-                        WDM.rescheduleExpiry(liveSession, to: LINK_EXPIRATION_NEVER)
-                    }
-                }
-            }
-            Divider()
-            Button {
-                if !preview {
-                    withGeneralPasteboard { pb in
-                        pb.clearContents()
-                        pb.setString(session.directURL, forType: .string)
-                    }
-                    optimiser.overlayMessage = "Copied link"
-                }
-            } label: {
-                Label("Copy Download Link", systemImage: "arrow.down.circle")
-            }
-            Button {
-                if !preview {
-                    withGeneralPasteboard { pb in
-                        pb.clearContents()
-                        pb.setString(session.roomURL, forType: .string)
-                    }
-                    optimiser.overlayMessage = "Copied link"
-                }
-            } label: {
-                Label("Copy Room Link", systemImage: "link")
-            }
-            Button {
-                if !preview {
-                    NSWorkspace.shared.open(URL(string: session.roomURL)!)
-                }
-            } label: {
-                Label("Open Room", systemImage: "globe")
-            }
-            Divider()
-            Button(role: .destructive) {
-                if !preview {
-                    WDM.stopSession(session)
-                }
-            } label: {
-                Label("Stop Transfer", systemImage: "xmark.circle")
-            }
-        } label: {
-            SwiftUI.Image(systemName: "link").font(.heavy(9))
-                .foregroundColor(glowing ? Color.red : Color.primary)
-                .shadow(color: .red.opacity(glowing ? 0.5 : 0), radius: glowing ? 4 : 0)
-        }
-        .accessibilityLabel("Secure send link")
-        .menuButtonStyle(BorderlessButtonMenuButtonStyle())
-        .onAppear { withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) { glowing = true } }
-        .onDisappear { glowing = false }
-    }
-
-    @State private var glowing = false
-
-}
-
-/// Binding that maps the optimiser's `sendExpiration` seconds onto the preset index used by the
-/// expiration sliders (so dragging snaps to 1m … 3d).
-@MainActor
-func sendExpirationIndexBinding(_ optimiser: Optimiser) -> Binding<Double> {
-    Binding(
-        get: { Double(nearestExpirationPresetIndex(optimiser.sendExpiration)) },
-        set: { optimiser.sendExpiration = LINK_EXPIRATION_PRESETS[max(0, min(LINK_EXPIRATION_PRESETS.count - 1, Int($0.rounded())))] }
-    )
-}
-
-/// The idle "Send securely" button. In the floating card it opens the in-card expiration overlay;
-/// in compact mode it opens a popover. Confirming creates the link with the chosen expiration.
-struct SendSecurelyStartButton: View {
-    @ObservedObject var optimiser: Optimiser
-    var inFloatingCard = false
-
-    @Environment(\.preview) var preview
-
-    var body: some View {
-        Button(action: {
-            guard !preview else { return }
-            optimiser.sendExpiration = Defaults[.defaultLinkExpiration]
-            if inFloatingCard {
-                optimiser.showSendExpiration = true
-            } else {
-                showPopover = true
-            }
-        }) {
-            SwiftUI.Image(systemName: "paperplane.fill").font(.heavy(9))
-        }
-        .contentShape(Rectangle())
-        .popover(isPresented: $showPopover, arrowEdge: .bottom) {
-            SendExpirationPopover(optimiser: optimiser) { showPopover = false }
-        }
-    }
-
-    @State private var showPopover = false
-
-}
-
-/// Compact-result popover: pick an expiration then create + copy the link.
-struct SendExpirationPopover: View {
-    @ObservedObject var optimiser: Optimiser
-    var onSend: () -> Void
-
-    @Environment(\.preview) var preview
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Link expires in \(expirationDurationLabel(optimiser.sendExpiration))")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
-            Slider(value: sendExpirationIndexBinding(optimiser), in: 0 ... Double(LINK_EXPIRATION_PRESETS.count - 1), step: 1)
-                .accessibilityLabel("Link expiration")
-                .accessibilityValue(expirationDurationLabel(optimiser.sendExpiration))
-            Button(action: {
-                guard !preview else { return }
-                warpDropSend(optimiser: optimiser, expiration: optimiser.sendExpiration)
-                onSend()
-            }) {
-                Label("Copy link · expires in \(expirationShortLabel(optimiser.sendExpiration))", systemImage: "paperplane.fill")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-        }
-        .padding(12)
-        .frame(width: 240)
-    }
-}
-
-/// Floating-card expiration overlay band: label + snap slider. The confirm button lives at the
-/// bottom of the card (SendExpirationConfirmButton).
-struct CardSendExpirationSlider: View {
-    @ObservedObject var optimiser: Optimiser
-
-    var body: some View {
-        VStack(spacing: 3) {
-            Text("Link expires in \(expirationDurationLabel(optimiser.sendExpiration))")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                .foregroundColor(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-            Slider(value: sendExpirationIndexBinding(optimiser), in: 0 ... Double(LINK_EXPIRATION_PRESETS.count - 1), step: 1)
-                .controlSize(.mini)
-                .accessibilityLabel("Link expiration")
-                .accessibilityValue(expirationDurationLabel(optimiser.sendExpiration))
-                .tint(.white)
-        }
-    }
-}
-
-/// Bottom-of-card confirm button for the floating expiration overlay.
-struct SendExpirationConfirmButton: View {
-    @ObservedObject var optimiser: Optimiser
-    @Environment(\.preview) var preview
-
-    var body: some View {
-        Button(action: {
-            guard !preview else { return }
-            optimiser.showSendExpiration = false
-            warpDropSend(optimiser: optimiser, expiration: optimiser.sendExpiration)
-        }) {
-            Label("Copy link · expires in \(expirationShortLabel(optimiser.sendExpiration))", systemImage: "paperplane.fill")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                .foregroundColor(.black)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 5)
-                .background(Capsule(style: .continuous).fill(.white))
-                .contentShape(Capsule(style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 /// Preset size limits shared by the "Fit under size" action button and the right-click submenu.
 let TARGET_SIZE_PRESETS: [(label: String, bytes: Int)] = [
     ("500 KB", 500_000),
@@ -3063,16 +2858,6 @@ struct ActionButton: View {
                 SwiftUI.Image(systemName: "tray.and.arrow.down").font(.heavy(9))
             }
             .contentShape(Rectangle())
-        case .sendSecurely:
-            if optimiser.warpDropConnecting {
-                ProgressView()
-                    .controlSize(.mini)
-                    .scaleEffect(0.6)
-            } else if let session = WDM.session(forOptimiser: optimiser) {
-                WarpDropActiveButton(session: session, optimiser: optimiser)
-            } else {
-                SendSecurelyStartButton(optimiser: optimiser, inFloatingCard: inFloatingCard)
-            }
         case .targetSize:
             TargetSizeButton(optimiser: optimiser, inFloatingCard: inFloatingCard)
         case .pipeline:

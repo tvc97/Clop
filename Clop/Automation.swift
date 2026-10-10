@@ -624,20 +624,6 @@ let ALL_STEP_TEMPLATES: [StepTemplate] = [
         create: { .copyToClipboard() }
     ),
     StepTemplate(
-        name: "copyLinkForSending", description: "Send file securely and copy share link to clipboard",
-        mandatoryParams: [],
-        optionalParams: [
-            ParamTemplate(
-                name: "expiration",
-                description: "auto-stop the link after this long (1m–3d, or never). Defaults to the setting in Preferences",
-                suggestions: ["1m", "15m", "1h", "6h", "1d", "3d", "never"],
-                freeText: true
-            ),
-        ],
-        applicableTypes: [.image, .video, .audio, .pdf],
-        create: { .copyLinkForSending() }
-    ),
-    StepTemplate(
         name: "fork", description: "Also show the result so far as a second draggable card, then keep processing",
         mandatoryParams: [],
         optionalParams: [
@@ -717,9 +703,6 @@ func parsePipelineStep(_ text: String) -> PipelineStep? {
     // Handle no-param steps
     if trimmed == "removeAudio" {
         return .removeAudio
-    }
-    if trimmed == "copyLinkForSending" {
-        return .copyLinkForSending()
     }
     if trimmed == "fork" {
         return .fork()
@@ -874,10 +857,6 @@ func parsePipelineStep(_ text: String) -> PipelineStep? {
         let format = ClipboardCopyFormat(rawValue: params["format"] ?? "path") ?? .path
         let relativeTo = params["relativeTo"]
         return .copyToClipboard(format: format, relativeTo: relativeTo)
-
-    case "copyLinkForSending":
-        let expiration = params["expiration"].flatMap { parseExpirationDuration($0) }
-        return .copyLinkForSending(expiration: expiration)
 
     case "fork":
         return .fork(location: params["location"])

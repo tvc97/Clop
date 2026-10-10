@@ -5,7 +5,6 @@ Clop/bin.zip
 *.delta
 *.bkp
 Releases/*.html
-required.swift
 Releases/old_updates/
 *.tmp
 build/
@@ -19,3 +18,7 @@ docs/specs/
 
 # subagent-driven-development scratch workspace
 .superpowers/
+
+# Per-user / macOS files
+.DS_Store
+xcuserdata/

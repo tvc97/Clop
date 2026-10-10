@@ -367,10 +367,6 @@ enum TempPipelineSegment {
     @Published var showCompressionSlider = false
     /// While true, the floating card shows the "Fit under size" slider (log-scaled target size).
     @Published var showTargetSizeSlider = false
-    /// While true, the floating card shows the "Send securely" expiration overlay (slider + confirm).
-    @Published var showSendExpiration = false
-    /// Chosen link expiration (seconds) for the pending send; seeded from the default setting.
-    @Published var sendExpiration: TimeInterval = Defaults[.defaultLinkExpiration]
     /// Set after a manual action (scale, compression, restore) so the hover overlay collapses and the
     /// new file size is visible; cleared on the next hover so the overlay returns on the next pass.
     @Published var collapseHoverOverlay = false
@@ -433,7 +429,6 @@ enum TempPipelineSegment {
     var copiedFromAppName: String?
 
     @Published var sharing = false
-    @Published var warpDropConnecting = false
     @Published var isVideoWithAudio = false
 
     lazy var image: Image? = fetchImage()
@@ -3057,7 +3052,6 @@ func optimiseURL(
     OM.optimisers.first(where: { $0.id == optimiserID })
 }
 
-import LowtechPro
 
 /// The free optimisations left on one way into Clop (the CLI, the drop zone, Shortcuts, a watched
 /// folder), counted per session.
@@ -3097,25 +3091,7 @@ final class OptimisationCounter: @unchecked Sendable {
 @discardableResult @inline(__always)
 @MainActor func proGuard<T>(count: OptimisationCounter, url: URL? = nil, _ action: @escaping () async throws -> T) async throws -> T {
     guard !BM.decompressingBinaries else { throw ClopError.decompressingBinariesError }
-    let pro = proactive
-    guard validReq(), pro || count.take() else {
-        clopDebugLog(
-            "proGuard BLOCKED: proactive=\(proactive) count=\(count.used) limit=\(count.limit) url=\(url?.absoluteString ?? "nil") PRO=\(PRO != nil ? "exists" : "nil") productActivated=\(PRO?.productActivated ?? false) onTrial=\(PRO?.onTrial ?? false)"
-        )
-        if let url {
-            OM.skippedBecauseNotPro = OM.skippedBecauseNotPro.with(url)
-        }
-        proLimitsReached(url: url)
-        throw ClopError.proError("Pro limits reached")
-    }
-    do {
-        return try await action()
-    } catch {
-        if !pro {
-            count.giveBack()
-        }
-        throw error
-    }
+    return try await action()
 }
 
 let manualOptimisationCount = OptimisationCounter()

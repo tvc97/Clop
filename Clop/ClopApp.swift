@@ -13,7 +13,6 @@ import Foundation
 import Ignore
 import Lowtech
 import LowtechIndie
-import LowtechPro
 import LowtechProSentry
 import os
 import QuickLookUI
@@ -99,26 +98,6 @@ class WindowManager: ObservableObject {
 }
 let WM = WindowManager()
 
-/// Open the Settings window on the About tab and present the Paddle licence dialog as a sheet
-/// attached to it. The Settings window opens asynchronously, so wait for it to exist before asking
-/// Paddle to present — otherwise `AppDelegate.willShowPaddle` finds no parent window and the dialog
-/// falls back to a standalone (previously unclickable) window.
-@MainActor func manageLicenceInSettings() {
-    settingsViewManager.tab = .about
-    WM.open("settings")
-    focus()
-
-    func present(retriesLeft: Int) {
-        if let window = NSApp.windows.first(where: { $0.isSettingsWindow }) {
-            window.makeKeyAndOrderFront(nil)
-            PRO?.manageLicence()
-        } else if retriesLeft > 0 {
-            mainAsyncAfter(ms: 50) { present(retriesLeft: retriesLeft - 1) }
-        }
-    }
-    present(retriesLeft: 20)
-}
-
 var TRANSIENT_TYPES: Set<NSPasteboard.PasteboardType> = [
     .init("org.nspasteboard.TransientType"),
     .init("org.nspasteboard.ConcealedType"),
@@ -142,7 +121,7 @@ extension NSPasteboard {
     }
 }
 
-typealias AppDelegateParent = LowtechProAppDelegate
+typealias AppDelegateParent = LowtechIndieAppDelegate
 
 enum OptimisationSource: Codable, Equatable, Hashable {
     case clipboard
@@ -263,8 +242,6 @@ class AppDelegate: AppDelegateParent {
         case items([ClipboardType])
     }
 
-    var proDebugCancellables = Set<AnyCancellable>()
-
     var videoWatcher: FileOptimisationWatcher?
     var imageWatcher: FileOptimisationWatcher?
     var pdfWatcher: FileOptimisationWatcher?
@@ -353,20 +330,6 @@ class AppDelegate: AppDelegateParent {
 
     var fileCleaner: Timer?
 
-    @MainActor
-    override func willShowPaddle(_ uiType: PADUIType, product _: PADProduct) -> PADDisplayConfiguration? {
-        // Present the licence / product-access dialogs as a sheet on the Settings window when it is
-        // open: as standalone windows they were sometimes not clickable. Checkout and alerts keep
-        // their own window.
-        if uiType == .product || uiType == .license, let settingsWindow = NSApp.windows.first(where: { $0.isSettingsWindow }) {
-            settingsViewManager.tab = .about
-            focus()
-            settingsWindow.makeKeyAndOrderFront(nil)
-            return PADDisplayConfiguration(.sheet, hideNavigationButtons: false, parentWindow: settingsWindow)
-        }
-        return PADDisplayConfiguration(.window, hideNavigationButtons: false, parentWindow: nil)
-    }
-
     override func applicationDidFinishLaunching(_ notification: Notification) {
         sentryCrashExceptionApplicationType = SentryCrashExceptionApplication.self
         if !SWIFTUI_PREVIEW {
@@ -406,16 +369,6 @@ class AppDelegate: AppDelegateParent {
             createFileCleaner()
         }
 
-        paddleVendorID = "122873"
-        paddleAPIKey = "e1e517a68c1ed1bea2ac968a593ac147"
-        paddleProductID = "841006"
-        trialDays = 14
-        trialText = "This is a trial for the Pro features. After the trial, the app will automatically revert to the free version."
-        price = 15
-        productName = "Clop Pro"
-        vendorName = "THE LOW TECH GUYS SRL"
-        hasFreeFeatures = true
-
         if !SWIFTUI_PREVIEW {
             LowtechSentry.sentryDSN = "https://7dad9331a2e1753c3c0c6bc93fb0d523@o84592.ingest.sentry.io/4505673793077248"
             LowtechSentry.configureSentry(restartOnHang: false, getUser: LowtechSentry.getSentryUser)
@@ -428,13 +381,11 @@ class AppDelegate: AppDelegateParent {
             KM.primaryKeys = Defaults[.enabledKeys] + Defaults[.quickResizeKeys]
             KM.onPrimaryHotkey = { key in
                 self.handleHotkey(key)
-                let _ = invalidReq2(PRODUCTS, nil)
             }
 
             KM.secondaryKeyModifiers = [.lcmd]
             KM.onSecondaryHotkey = { key in
                 self.handleCommandHotkey(key)
-                let _ = invalidReq3(PRODUCTS, nil)
             }
 
             KM.onBareHotkey = { key in
@@ -443,23 +394,6 @@ class AppDelegate: AppDelegateParent {
         }
         super.applicationDidFinishLaunching(_: notification)
         UM.updater = updateController.updater
-        PM.pro = pro
-        if !SWIFTUI_PREVIEW {
-            clopDebugLog("applicationDidFinishLaunching: about to checkProLicense (productActivated=\(pro.productActivated), onTrial=\(pro.onTrial))")
-            pro.checkProLicense()
-        }
-
-        let p = pro
-        p.$productActivated.sink { newValue in
-            clopDebugLog("proactive observer: productActivated changed to \(newValue) (onTrial=\(p.onTrial), proactive will be \(newValue || p.onTrial))")
-            // The licence resolves after launch, so the card written at startup says pro:false even for
-            // a licensed user until this lands. Rewrite it rather than let an agent read a stale no.
-            mainActor { MCPInstaller.writeServerCard() }
-        }.store(in: &proDebugCancellables)
-        p.$onTrial.sink { newValue in
-            clopDebugLog("proactive observer: onTrial changed to \(newValue) (productActivated=\(p.productActivated), proactive will be \(p.productActivated || newValue))")
-            mainActor { MCPInstaller.writeServerCard() }
-        }.store(in: &proDebugCancellables)
 
         migrateShortcutsToPipelines()
         migrateToUnifiedCompression()
@@ -566,7 +500,6 @@ class AppDelegate: AppDelegateParent {
             .store(in: &observers)
         initMachPortListener()
 
-        _ = invalidReq(PRODUCTS, nil)
         setupServiceProvider()
         // Written every launch whether or not the switch is on, so an agent can find Clop and read how
         // to ask for permission rather than guessing.
@@ -812,13 +745,6 @@ class AppDelegate: AppDelegateParent {
             opt.showInFinder()
         case .u:
             DROPSHARE.open(optimiser: opt)
-        case .w:
-            if let session = WDM.session(forOptimiser: opt) {
-                session.copyLink()
-                opt.overlayMessage = "Copied link"
-            } else {
-                warpDropSend(optimiser: opt)
-            }
         case .o:
             guard let url = opt.url ?? opt.originalURL else { return }
             NSWorkspace.shared.open(url)
@@ -1108,19 +1034,6 @@ class AppDelegate: AppDelegateParent {
     @objc func windowDidBecomeMainNotification(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
 
-        if let paddleController = window.windowController as? PADActivateWindowController,
-           let email = paddleController.emailTxt, let licenseCode = paddleController.licenseTxt
-        {
-            email.isBordered = true
-            licenseCode.isBordered = true
-
-            email.drawsBackground = true
-            licenseCode.drawsBackground = true
-
-            email.backgroundColor = .black.withAlphaComponent(0.05)
-            licenseCode.backgroundColor = .black.withAlphaComponent(0.05)
-        }
-
         if window.title.contains("Updat") {
             focus()
             return
@@ -1408,8 +1321,6 @@ class AppDelegate: AppDelegateParent {
         if Defaults[.enableClipboardOptimiser], !Defaults[.pauseAutomaticOptimisations] {
             initClipboardOptimiser()
         }
-
-        _ = invalidReq(PRODUCTS, nil)
     }
 
     @MainActor func initClipboardOptimiser() {
@@ -1810,8 +1721,6 @@ struct ClopApp: App {
     @ObservedObject var om = OM
     @ObservedObject var wm = WM
 
-    @ObservedObject var pm = PM
-
     var settingsWindow: some Scene {
         let w = Window("Settings", id: "settings") {
             SettingsView()
@@ -1891,16 +1800,6 @@ extension NSFilePromiseReceiver {
             return
         }
         log.error("\(exc.description)")
-    }
-}
-
-import Paddle
-
-var PRODUCTS: [Any] {
-    if let product {
-        [product]
-    } else {
-        []
     }
 }
 

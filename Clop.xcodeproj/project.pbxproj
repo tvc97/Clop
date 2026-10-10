@@ -22,7 +22,6 @@
 		C70A48EE2B1A06AD00C266DE /* Colorize.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70A48ED2B1A06AD00C266DE /* Colorize.swift */; };
 		C70B5F312AC029DA00345739 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70B5F302AC029DA00345739 /* Shared.swift */; };
 		C73802052BD1B81A001BEE6C /* lrzip in Resources */ = {isa = PBXBuildFile; fileRef = C73802042BD1B81A001BEE6C /* lrzip */; };
-		C7605FC32F78194D0087B195 /* WarpDrop in Frameworks */ = {isa = PBXBuildFile; productRef = C7605FC22F78194D0087B195 /* WarpDrop */; };
 		C78211022A59E371008DB106 /* Lowtech in Frameworks */ = {isa = PBXBuildFile; productRef = C78211012A59E371008DB106 /* Lowtech */; };
 		C78211042A59E371008DB106 /* LowtechIndie in Frameworks */ = {isa = PBXBuildFile; productRef = C78211032A59E371008DB106 /* LowtechIndie */; };
 		C78211062A59E371008DB106 /* LowtechPro in Frameworks */ = {isa = PBXBuildFile; productRef = C78211052A59E371008DB106 /* LowtechPro */; };
@@ -502,7 +501,6 @@
 				Uploads.swift,
 				Video.swift,
 				VideoPipeline.swift,
-				WarpDropManager.swift,
 				bin.entitlements,
 				bin.tar.lrz,
 				bin.tar.lrz.sha256,
@@ -861,7 +859,6 @@
 				C78211042A59E371008DB106 /* LowtechIndie in Frameworks */,
 				C7D697172F837AD000FAFD3A /* LowtechProSentry in Frameworks */,
 				C7DF1A282AB8885600AF8EDC /* Ignore in Frameworks */,
-				C7605FC32F78194D0087B195 /* WarpDrop in Frameworks */,
 				C78211062A59E371008DB106 /* LowtechPro in Frameworks */,
 				C7BE4CCF2D32EEA200B59E5C /* SymbolPicker in Frameworks */,
 				C7A1B0012FA3D00000JXLCDR /* JxlCoder in Frameworks */,
@@ -980,7 +977,6 @@
 				C78211052A59E371008DB106 /* LowtechPro */,
 				C7DF1A272AB8885600AF8EDC /* Ignore */,
 				C7BE4CCE2D32EEA200B59E5C /* SymbolPicker */,
-				C7605FC22F78194D0087B195 /* WarpDrop */,
 				C7D697162F837AD000FAFD3A /* LowtechProSentry */,
 				C7A1B0002FA3D00000JXLCDR /* JxlCoder */,
 			);
@@ -1020,7 +1016,6 @@
 				C7DF1A262AB8885500AF8EDC /* XCRemoteSwiftPackageReference "swift-ignore" */,
 				C7956A482AC209F200C0EDF2 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				C73987702D32ECE200CCC939 /* XCRemoteSwiftPackageReference "SymbolPicker" */,
-				C7605FC12F78194D0087B195 /* XCLocalSwiftPackageReference "../../../Github/alin23/warpdrop/swift" */,
 				C7A1B0022FA3D00000JXLCDR /* XCRemoteSwiftPackageReference "jxl-coder-swift" */,
 			);
 			productRefGroup = C7AB6622288301590041BEC8 /* Products */;
@@ -1432,10 +1427,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		C7605FC12F78194D0087B195 /* XCLocalSwiftPackageReference "../../../Github/alin23/warpdrop/swift" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../Github/alin23/warpdrop/swift;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1482,10 +1473,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		C7605FC22F78194D0087B195 /* WarpDrop */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = WarpDrop;
-		};
 		C78211012A59E371008DB106 /* Lowtech */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C78211002A59E371008DB106 /* XCRemoteSwiftPackageReference "Lowtech" */;

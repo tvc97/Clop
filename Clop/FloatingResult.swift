@@ -8,7 +8,6 @@
 import Defaults
 import Lowtech
 import LowtechIndie
-import LowtechPro
 import os
 import SwiftUI
 import System
@@ -1340,12 +1339,6 @@ struct FloatingResult: View {
                             .lineLimit(3)
                     }
                     HStack(spacing: 8) {
-                        Button("Get Clop Pro") {
-                            manageLicenceInSettings()
-                        }
-                        .buttonStyle(FlatButton(color: .inverted, textColor: .mauvish, radius: 6, verticalPadding: 3))
-                        .font(.round(11, weight: .semibold))
-
                         Button("Never show this again") {
                             neverShowProError = true
                             hoveredOptimiserID = nil
@@ -1483,8 +1476,6 @@ struct FloatingResult: View {
             sliderBand { CardCompressionSlider(optimiser: optimiser) }
         } else if optimiser.showTargetSizeSlider {
             sliderBand { CardTargetSizeSlider(optimiser: optimiser) }
-        } else if optimiser.showSendExpiration {
-            sliderBand { CardSendExpirationSlider(optimiser: optimiser) }
         } else if isExpanded, !optimiser.running, optimiser.error == nil, optimiser.notice == nil, !optimiser.showingFormats {
             actionGrid
                 .opacity(optimiser.editingFilename ? 0.3 : 1)
@@ -1493,9 +1484,7 @@ struct FloatingResult: View {
     }
 
     @ViewBuilder var cardBottomContent: some View {
-        if optimiser.showSendExpiration {
-            SendExpirationConfirmButton(optimiser: optimiser)
-        } else if optimiser.showDownscaleSlider || optimiser.showCompressionSlider || optimiser.showTargetSizeSlider {
+        if optimiser.showDownscaleSlider || optimiser.showCompressionSlider || optimiser.showTargetSizeSlider {
             EmptyView()
         } else if optimiser.running {
             progressView.controlSize(.small).lineLimit(1).foregroundColor(.white)
@@ -1531,7 +1520,7 @@ struct FloatingResult: View {
     }
 
     @ViewBuilder var cornerControls: some View {
-        let sliding = optimiser.showDownscaleSlider || optimiser.showCompressionSlider || optimiser.showSendExpiration
+        let sliding = optimiser.showDownscaleSlider || optimiser.showCompressionSlider
         if isExpanded || optimiser.running, !sliding, !optimiser.showingFormats {
             fileDraggable(CloseStopButton(optimiser: optimiser))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -1625,7 +1614,7 @@ struct FloatingResult: View {
                 // press-drag instantly. No drag while a slider is active either. The other card
                 // buttons opt back in individually via `fileDraggable`.
                 .ifLet(optimiser.url, transform: { img, url in
-                    img.if(!optimiser.showDownscaleSlider && !optimiser.showCompressionSlider && !optimiser.showSendExpiration) { v in
+                    img.if(!optimiser.showDownscaleSlider && !optimiser.showCompressionSlider) { v in
                         v.onDrag {
                             guard !preview else {
                                 return NSItemProvider()
@@ -1733,10 +1722,6 @@ struct FloatingResult: View {
             // A fresh hover (mouse re-entering) brings the overlay back after it was collapsed by an action.
             if hovering {
                 optimiser.collapseHoverOverlay = false
-            }
-            // Leaving the card abandons an in-progress send-expiration overlay.
-            if !hovering {
-                optimiser.showSendExpiration = false
             }
             withAnimation(.easeOut(duration: 0.15)) {
                 self.hovering = hovering

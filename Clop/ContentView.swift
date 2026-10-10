@@ -9,7 +9,6 @@ import Defaults
 import LaunchAtLogin
 import Lowtech
 import LowtechIndie
-import LowtechPro
 import SwiftUI
 import System
 
@@ -17,9 +16,7 @@ import System
 
 struct MenuView: View {
     @ObservedObject var um = UM
-    @ObservedObject var pm = PM
     @ObservedObject var om = OM
-    @ObservedObject var wdm = WDM
     @ObservedObject var lastApp = LastFocusedAppTracker.shared
     @Environment(\.openWindow) var openWindow
 
@@ -43,9 +40,6 @@ struct MenuView: View {
                 Button("    \(str.count > 50 ? (str.prefix(25) + "..." + str.suffix(15)) : str)") {
                     QuickLooker.quicklook(url: url)
                 }
-            }
-            Button("Get Clop Pro") {
-                manageLicenceInSettings()
             }
         }
     }
@@ -163,35 +157,6 @@ struct MenuView: View {
             }
         }
 
-        if wdm.hasSessions {
-            Menu("Sending files (\(wdm.sessions.count))") {
-                ForEach(wdm.sessions) { session in
-                    Menu(session.fileNames) {
-                        Button("Copy link") {
-                            session.copyLink()
-                        }
-                        if session.downloadCount > 0 {
-                            Text("Downloaded \(session.downloadCount) time\(session.downloadCount == 1 ? "" : "s")")
-                        }
-                        Button("Stop sending") {
-                            wdm.stopSession(session)
-                        }
-                    }
-                }
-                Divider()
-                Button("Copy all links") {
-                    let links = wdm.sessions.map(\.shareURL).joined(separator: "\n")
-                    withGeneralPasteboard { pb in
-                        pb.clearContents()
-                        pb.setString(links, forType: .string)
-                    }
-                }
-                Button("Stop all") {
-                    wdm.stopAll()
-                }
-            }
-        }
-
         if !proactive, !om.skippedBecauseNotPro.isEmpty {
             proErrors
         }
@@ -206,20 +171,7 @@ struct MenuView: View {
             Button("Privacy policy") {
                 NSWorkspace.shared.open("https://lowtechguys.com/clop/privacy".url!)
             }
-            Text("License: \(proactive ? "Pro" : "Free")")
-            #if DEBUG
-                Button("Reset Trial") {
-                    product?.resetTrial()
-                }
-                Button("Expire Trial") {
-                    product?.expireTrial()
-                }
-            #endif
             Text("Version: v\(Bundle.main.version)")
-        }
-
-        Button("Manage license") {
-            manageLicenceInSettings()
         }
 
         Button(um.newVersion != nil ? "v\(um.newVersion!) update available" : "Check for updates") {
@@ -241,14 +193,6 @@ func contactURL() -> URL {
         return "https://lowtechguys.com/contact".url!
     }
     urlBuilder.queryItems = [URLQueryItem(name: "userid", value: SERIAL_NUMBER_HASH), URLQueryItem(name: "app", value: "Clop")]
-
-    if let licenseCode = product?.licenseCode {
-        urlBuilder.queryItems?.append(URLQueryItem(name: "code", value: licenseCode))
-    }
-
-    if let email = product?.activationEmail {
-        urlBuilder.queryItems?.append(URLQueryItem(name: "email", value: email))
-    }
 
     return urlBuilder.url ?? "https://lowtechguys.com/contact".url!
 }

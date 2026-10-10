@@ -1,7 +1,6 @@
 import AppKit
 import Defaults
 import Foundation
-import LowtechPro
 import os
 
 private let mcpLog = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.lowtechguys.Clop", category: "MCP")
@@ -97,10 +96,6 @@ enum MCPInstaller {
         switch url.lastPathComponent {
         case "start":
             guard !Defaults[.mcpEnabled] else { return true }
-            guard proactive else {
-                showProRequired()
-                return true
-            }
             if askToEnable() {
                 setEnabled(true)
             }
@@ -197,18 +192,5 @@ enum MCPInstaller {
         alert.addButton(withTitle: "Not now")
         NSApp.activate(ignoringOtherApps: true)
         return alert.runModal() == .alertFirstButtonReturn
-    }
-
-    @MainActor private static func showProRequired() {
-        let alert = NSAlert()
-        alert.messageText = "MCP needs Clop Pro"
-        alert.informativeText = "An agent asked for access to controlling Clop through MCP. That is a Pro feature."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "Manage Licence")
-        alert.addButton(withTitle: "Not now")
-        NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
-            manageLicenceInSettings()
-        }
     }
 }

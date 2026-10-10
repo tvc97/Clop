@@ -59,12 +59,6 @@ enum SettingsSearchIndex {
             keywords: ["icloud", "sync", "other macs", "settings"], tab: .general, section: ""
         ),
         SettingEntry(
-            id: "general.main.defaultLinkExpiration", keys: ["defaultLinkExpiration"],
-            title: "Default link expiration",
-            subtitle: "How long a Send securely link stays alive",
-            keywords: [], tab: .general, section: ""
-        ),
-        SettingEntry(
             id: "general.workingdirectory.workdirCleanupInterval", keys: ["workdirCleanupInterval"],
             title: "Working directory cleanup",
             subtitle: "Periodically delete files older than this from Clop's working directory",
@@ -821,7 +815,7 @@ enum SettingsSearchIndex {
             id: "floating.main.floatingResultActions", keys: ["floatingResultActions"],
             title: "Action buttons",
             subtitle: "",
-            keywords: ["floating result", "grid", "icons", "share", "quicklook", "customise", "reorder", "remove", "add", "toolbar", "send securely", "aggressive", "downscale"], tab: .floating, section: ""
+            keywords: ["floating result", "grid", "icons", "share", "quicklook", "customise", "reorder", "remove", "add", "toolbar", "aggressive", "downscale"], tab: .floating, section: ""
         ),
         SettingEntry(
             id: "floating.main.compactResultActions", keys: ["compactResultActions"],
@@ -875,7 +869,7 @@ enum SettingsSearchIndex {
     /// How well a query word matches an indexed word, 0 when it does not.
     ///
     /// Graded rather than yes/no, because the rungs have to outrank each other: typing "send" must put
-    /// the row called "Send securely" above a row that merely mentions "sender" in a keyword.
+    /// the row called "Sync settings" above a row that merely mentions "synchronous" in a keyword.
     ///
     /// The prefix rung carries the field while you are still typing, and it has no minimum length on
     /// purpose. An earlier version needed four characters before it would look at a prefix at all,

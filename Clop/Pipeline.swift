@@ -52,7 +52,8 @@ struct Pipeline: Codable, Hashable, Identifiable, Defaults.Serializable {
         do {
             steps = try container.decodeIfPresent([PipelineStep].self, forKey: .steps) ?? []
         } catch {
-            steps = []
+            // Keep the steps that still decode, so a step type removed from Clop drops only itself
+            steps = (try? container.decodeIfPresent([SkippingInvalid<PipelineStep>].self, forKey: .steps))?.compactMap(\.value) ?? []
         }
         name = try container.decodeIfPresent(String.self, forKey: .name)
         rawText = try container.decodeIfPresent(String.self, forKey: .rawText)
@@ -714,8 +715,6 @@ extension Optimiser {
             await exec.handleRunShortcut(shortcut: shortcut)
         case let .copyToClipboard(format, relativeTo):
             exec.handleCopyToClipboard(format: format, relativeTo: relativeTo)
-        case let .copyLinkForSending(expiration):
-            await exec.handleCopyLinkForSending(expiration: expiration)
         case let .fork(location):
             await exec.handleFork(location: location, followingSteps: Array(pipeline.steps.dropFirst(stepIndex + 1)))
         case let .shelveWith(app):
@@ -861,4 +860,13 @@ extension Optimiser {
         }
     }
     return (finalFile, anyRan)
+}
+
+/// Decodes to nil instead of failing the whole array when one element is invalid.
+private struct SkippingInvalid<T: Decodable>: Decodable {
+    let value: T?
+
+    init(from decoder: Decoder) throws {
+        value = try? T(from: decoder)
+    }
 }

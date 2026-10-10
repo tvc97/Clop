@@ -1255,13 +1255,6 @@ final class PipelineExecution {
         try? currentFile.setOptimisationStatusXattr("true")
     }
 
-    func handleCopyLinkForSending(expiration: TimeInterval? = nil) async {
-        let url = currentFile.url
-        if let shareURL = await warpDropSendAndWait(url: url, optimiser: optimiser, expiration: expiration) {
-            log.debug("Pipeline: send link copied: \(shareURL)")
-        }
-    }
-
     // MARK: - Fork
 
     /// Branch off the current result as a SECOND floating result card, then let the main line

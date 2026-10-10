@@ -1,7 +1,6 @@
 import Defaults
 import Foundation
 import Lowtech
-import LowtechPro
 import os
 import SwiftUI
 import System
@@ -228,13 +227,6 @@ struct CompactResult: View {
 
                 if proError {
                     HStack {
-                        Button("Get Clop Pro") {
-                            manageLicenceInSettings()
-                        }
-                        .buttonStyle(FlatButton(color: .inverted, textColor: .mauvish, radius: 5, verticalPadding: 2))
-                        .font(.round(10, weight: .heavy))
-                        .colorMultiply(.mauvish.blended(withFraction: 0.8, of: .white))
-                        Spacer()
                         Button("Never show this again") {
                             neverShowProError = true
                             hoveredOptimiserID = nil

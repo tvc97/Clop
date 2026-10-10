@@ -6,6 +6,19 @@ enum Migrations {
     static func run() {
         clopIgnoreMigrate()
         portablePathsMigrate()
+        removedSendSecurelyMigrate()
+    }
+
+    /// The "Send securely" result button was removed. Drop it from the stored button layouts before
+    /// they are decoded, so an unknown action can't make a customised layout fall back to the default.
+    static func removedSendSecurelyMigrate() {
+        for key in [Defaults.Keys.floatingResultActions.name, Defaults.Keys.compactResultActions.name] {
+            guard let actions = UserDefaults.standard.array(forKey: key) as? [String] else { continue }
+            let kept = actions.filter { $0 != "\"sendSecurely\"" && $0 != "sendSecurely" }
+            if kept.count != actions.count {
+                UserDefaults.standard.set(kept, forKey: key)
+            }
+        }
     }
 
     /// Rewrite every stored path into its portable form (`~/Pictures` instead of `/Users/alin/Pictures`).

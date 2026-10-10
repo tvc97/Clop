@@ -1210,7 +1210,7 @@ struct RunPipelineIntent: AppIntent {
 
     Steps: optimise, downscale, lowerBitrate, convert, crop, extractPagesAsImages,
     copy, move, rename, delete, if, ifNot, removeAudio, changeSpeed, runScript,
-    runShortcut, copyToClipboard, copyLinkForSending, shelveWith, uploadWith, openWith
+    runShortcut, copyToClipboard, shelveWith, uploadWith, openWith
     """)
     var steps: String?
 
